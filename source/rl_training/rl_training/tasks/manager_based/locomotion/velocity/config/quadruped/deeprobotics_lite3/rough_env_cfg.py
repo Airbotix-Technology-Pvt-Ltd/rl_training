@@ -91,21 +91,21 @@ class DeeproboticsLite3RoughEnvCfg(LocomotionVelocityRoughEnvCfg):
 
         # STAIRS TERRAIN CONFIGURATION - Enable stairs training
         # set terrain generation probability: stairs enabled
-        self.scene.terrain.terrain_generator.sub_terrains["random_rough"].proportion = 0.3
-        self.scene.terrain.terrain_generator.sub_terrains["hf_pyramid_slope"].proportion = 0.2
-        self.scene.terrain.terrain_generator.sub_terrains["hf_pyramid_slope_inv"].proportion = 0.2
-        self.scene.terrain.terrain_generator.sub_terrains["boxes"].proportion = 0.1
-        self.scene.terrain.terrain_generator.sub_terrains["pyramid_stairs"].proportion = 0.1
-        self.scene.terrain.terrain_generator.sub_terrains["pyramid_stairs_inv"].proportion = 0.1
+        self.scene.terrain.terrain_generator.sub_terrains["random_rough"].proportion = 0.2
+        self.scene.terrain.terrain_generator.sub_terrains["hf_pyramid_slope"].proportion = 0.13
+        self.scene.terrain.terrain_generator.sub_terrains["hf_pyramid_slope_inv"].proportion = 0.13
+        self.scene.terrain.terrain_generator.sub_terrains["boxes"].proportion = 0.14
+        self.scene.terrain.terrain_generator.sub_terrains["pyramid_stairs"].proportion = 0.2
+        self.scene.terrain.terrain_generator.sub_terrains["pyramid_stairs_inv"].proportion = 0.2
 
         # Scale down the terrain features for the small Lite3 robot
         self.scene.terrain.terrain_generator.sub_terrains["random_rough"].noise_range = (0.01, 0.06)
         self.scene.terrain.terrain_generator.sub_terrains["random_rough"].noise_step = 0.01
         
         # Real stairs configuration: 30cm width x 14cm height
-        self.scene.terrain.terrain_generator.sub_terrains["pyramid_stairs"].step_height_range = (0.14, 0.14)
+        self.scene.terrain.terrain_generator.sub_terrains["pyramid_stairs"].step_height_range = (0.10, 0.15)
         self.scene.terrain.terrain_generator.sub_terrains["pyramid_stairs"].step_width = 0.3
-        self.scene.terrain.terrain_generator.sub_terrains["pyramid_stairs_inv"].step_height_range = (0.14, 0.14)
+        self.scene.terrain.terrain_generator.sub_terrains["pyramid_stairs_inv"].step_height_range = (0.10, 0.15)
         self.scene.terrain.terrain_generator.sub_terrains["pyramid_stairs_inv"].step_width = 0.3
 
         # scale down the terrains because the robot is small
@@ -120,7 +120,7 @@ class DeeproboticsLite3RoughEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.rewards.base_height_l2.params["target_height"] = 0.35
         self.rewards.base_height_l2.params["asset_cfg"].body_names = [self.base_link_name]
 
-        self.rewards.feet_air_time.weight = 5.0 # 5.0
+        self.rewards.feet_air_time.weight = 8.0 # 5.0
         self.rewards.feet_air_time.params["threshold"] = 0.5
         self.rewards.feet_air_time.params["sensor_cfg"].body_names = [self.foot_link_name]
         self.rewards.feet_air_time_variance.weight = -8.0 # -8.0
@@ -134,9 +134,9 @@ class DeeproboticsLite3RoughEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.rewards.feet_height_body.weight = -2.5 # -2.5
         self.rewards.feet_height_body.params["target_height"] = -0.35
         self.rewards.feet_height_body.params["asset_cfg"].body_names = [self.foot_link_name]
-        self.rewards.feet_height.weight = -0.2 # -0.2
+        self.rewards.feet_height.weight = -0.05 # -0.2
         self.rewards.feet_height.params["asset_cfg"].body_names = [self.foot_link_name]
-        self.rewards.feet_height.params["target_height"] = 0.05
+        self.rewards.feet_height.params["target_height"] = 0.08 #0.05
         self.rewards.contact_forces.weight = -1e-1 # -2e-2
         self.rewards.contact_forces.params["sensor_cfg"].body_names = [self.foot_link_name]
 
