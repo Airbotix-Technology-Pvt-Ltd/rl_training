@@ -1,4 +1,4 @@
-# DeepRobotics RL Training Setup Guide
+# Airbotix RL Training Setup Guide
 
 **Isaac Lab + rl_training Installation & Configuration**
 
