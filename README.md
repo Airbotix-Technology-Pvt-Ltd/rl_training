@@ -143,7 +143,7 @@ python scripts/reinforcement_learning/rsl_rl/train.py \
 
 ## ❤️ Credits & Tribute
 
-We pay tribute and express our sincere gratitude to **DeepRobotics** for providing the foundational `rl_training` stack and robust robot models.
+We pay tribute and express our sincere gratitude to **DeepRobotics** for providing the foundational `rl_training` stack and robust robot models:
 
 - **SDK Deploy**: [DeepRoboticsLab/sdk_deploy](https://github.com/DeepRoboticsLab/sdk_deploy)
 - **RL Training**: [DeepRoboticsLab/rl_training](https://github.com/DeepRoboticsLab/rl_training)
@@ -151,4 +151,4 @@ We pay tribute and express our sincere gratitude to **DeepRobotics** for providi
 
 ---
 *Airbotix Technology Pvt Ltd - Lite3 P2P Autonomous Navigation Project*
-*Sumit Bhardwaj ([@smtbhd32-ABX](https://github.com/smtbhd32-ABX))*
+*See our [**Contributors Hub**](../Contributors.md) for full project attribution.*
