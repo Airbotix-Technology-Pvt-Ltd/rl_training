@@ -39,11 +39,12 @@ class DeeproboticsLite3RoughEnvCfg(LocomotionVelocityRoughEnvCfg):
         # post init of parent
         super().__post_init__()
 
-        # ------------------------------Sence------------------------------
+        # ------------------------------Scene------------------------------
         self.scene.robot = DEEPROBOTICS_LITE3_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
-        self.scene.height_scanner.prim_path = "{ENV_REGEX_NS}/Robot/" + self.base_link_name
-        self.scene.height_scanner_base.prim_path = "{ENV_REGEX_NS}/Robot/" + self.base_link_name
-        self.scene.height_scanner.pattern_cfg.resolution = 0.07 #  = GridPatternCfg(resolution=0.07, size=[1.6, 1.0]),
+
+        # 🚨 DISABLE HEIGHT SCANNERS COMPLETELY
+        # self.scene.height_scanner = None
+        # self.scene.height_scanner_base = None
 
         # ------------------------------Observations------------------------------
         self.observations.policy.base_lin_vel = None # type: ignore
@@ -116,9 +117,9 @@ class DeeproboticsLite3RoughEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.rewards.action_rate_l2.weight = -0.02 #-0.02
         # self.rewards.smoothness_2.weight = -0.0075
 
-        self.rewards.base_height_l2.weight = -10.0
-        self.rewards.base_height_l2.params["target_height"] = 0.35
-        self.rewards.base_height_l2.params["asset_cfg"].body_names = [self.base_link_name]
+        # self.rewards.base_height_l2.weight = 0.0
+        # self.rewards.base_height_l2.params["target_height"] = 0.35
+        # self.rewards.base_height_l2.params["asset_cfg"].body_names = [self.base_link_name]
 
         self.rewards.feet_air_time.weight = 8.0 # 5.0
         self.rewards.feet_air_time.params["threshold"] = 0.5
@@ -181,7 +182,7 @@ class DeeproboticsLite3RoughEnvCfg(LocomotionVelocityRoughEnvCfg):
 
         # ------------------------------Terminations------------------------------
         self.terminations.illegal_contact = None
-        # self.terminations.bad_orientation_2 = None
+        self.terminations.bad_orientation_2 = None
 
         # ------------------------------Curriculums------------------------------
         # self.curriculum.command_levels.params["range_multiplier"] = (0.2, 1.0)

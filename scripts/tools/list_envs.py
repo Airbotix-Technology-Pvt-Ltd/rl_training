@@ -55,12 +55,16 @@ def main():
     index = 0
     # acquire all Isaac environments names
     for task_spec in gym.registry.values():
-        if "Deeprobotics" in task_spec.id:
+        if "Lite3" in task_spec.id:
             # wrap long text in each column before adding it to the table
             task_name = textwrap.fill(task_spec.id, max_width)
             entry_point = textwrap.fill(task_spec.entry_point, max_width)
-            config = textwrap.fill(task_spec.kwargs["env_cfg_entry_point"], max_width)
+            cfg_entry = task_spec.kwargs["env_cfg_entry_point"]
 
+            if isinstance(cfg_entry, str):
+                config = textwrap.fill(cfg_entry, max_width)
+            else:
+                config = textwrap.fill(str(cfg_entry), max_width)
             # add details to table
             table.add_row([index + 1, task_name, entry_point, config])
             # increment count
@@ -76,5 +80,5 @@ if __name__ == "__main__":
     except Exception as e:
         raise e
     finally:
-        # close the app
-        simulation_app.close()
+        import os
+        os._exit(0)

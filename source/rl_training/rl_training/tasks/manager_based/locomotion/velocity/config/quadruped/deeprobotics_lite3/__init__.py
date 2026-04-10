@@ -34,3 +34,15 @@ gym.register(
     },
 )
 
+from .airbotix_env_cfg import DeeproboticsLite3AirbotixEnvCfg
+from .agents.rsl_rl_ppo_cfg import DeeproboticsLite3FlatPPORunnerCfg
+
+gym.register(
+    id="Airbotix-Deeprobotics-Lite3-v0",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
+    kwargs={
+        "env_cfg_entry_point": DeeproboticsLite3AirbotixEnvCfg,
+        "rsl_rl_cfg_entry_point": f"{DeeproboticsLite3FlatPPORunnerCfg.__module__}:DeeproboticsLite3FlatPPORunnerCfg",
+    },
+    disable_env_checker=True,
+)
