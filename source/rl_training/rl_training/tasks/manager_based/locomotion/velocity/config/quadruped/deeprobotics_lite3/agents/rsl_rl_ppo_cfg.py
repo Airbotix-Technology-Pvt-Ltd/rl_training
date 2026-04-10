@@ -46,3 +46,14 @@ class DeeproboticsLite3FlatPPORunnerCfg(DeeproboticsLite3RoughPPORunnerCfg):
 
         self.max_iterations = 10000
         self.experiment_name = "deeprobotics_lite3_flat"
+
+
+@configclass
+class DeeproboticsLite3AirbotixPPORunnerCfg(DeeproboticsLite3FlatPPORunnerCfg):
+    def __post_init__(self):
+        super().__post_init__()
+
+        self.experiment_name = "deeprobotics_lite3_airbotix"
+        self.policy.init_noise_std = 0.4
+        self.algorithm.entropy_coef = 0.003
+        self.algorithm.learning_rate = 5.0e-4
