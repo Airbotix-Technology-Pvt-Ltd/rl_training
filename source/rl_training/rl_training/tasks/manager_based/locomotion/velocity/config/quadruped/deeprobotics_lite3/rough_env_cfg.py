@@ -5,7 +5,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from isaaclab.utils import configclass
+from isaaclab.managers import RewardTermCfg as RewTerm
+from isaaclab.managers import SceneEntityCfg
 
+import rl_training.tasks.manager_based.locomotion.velocity.mdp as mdp
 from rl_training.tasks.manager_based.locomotion.velocity.velocity_env_cfg import LocomotionVelocityRoughEnvCfg
 # from isaaclab.sensors.ray_caster import GridPatternCfg
 ##
@@ -102,13 +105,18 @@ class DeeproboticsLite3RoughEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.events.randomize_push_robot = None
         self.events.randomize_actuator_gains.params["asset_cfg"].joint_names = self.joint_names
 
-        # set terrain generation probability to 0 for boxes and stairs
-        self.scene.terrain.terrain_generator.sub_terrains["random_rough"].proportion = 0.4
-        self.scene.terrain.terrain_generator.sub_terrains["hf_pyramid_slope"].proportion = 0.3
-        self.scene.terrain.terrain_generator.sub_terrains["hf_pyramid_slope_inv"].proportion = 0.3
+        # set terrain generation probability for stair climbing training
+        self.scene.terrain.terrain_generator.sub_terrains["random_rough"].proportion = 0.2
+        self.scene.terrain.terrain_generator.sub_terrains["hf_pyramid_slope"].proportion = 0.1
+        self.scene.terrain.terrain_generator.sub_terrains["hf_pyramid_slope_inv"].proportion = 0.1
         self.scene.terrain.terrain_generator.sub_terrains["boxes"].proportion = 0.0
-        self.scene.terrain.terrain_generator.sub_terrains["pyramid_stairs"].proportion = 0.0
-        self.scene.terrain.terrain_generator.sub_terrains["pyramid_stairs_inv"].proportion = 0.0
+        self.scene.terrain.terrain_generator.sub_terrains["pyramid_stairs"].proportion = 0.3
+        self.scene.terrain.terrain_generator.sub_terrains["pyramid_stairs_inv"].proportion = 0.3
+        # stair parameters - adjust for Lite3 size
+        self.scene.terrain.terrain_generator.sub_terrains["pyramid_stairs"].step_height_range = (0.04, 0.12)
+        self.scene.terrain.terrain_generator.sub_terrains["pyramid_stairs"].step_width_range = (0.25, 0.4)
+        self.scene.terrain.terrain_generator.sub_terrains["pyramid_stairs_inv"].step_height_range = (0.04, 0.12)
+        self.scene.terrain.terrain_generator.sub_terrains["pyramid_stairs_inv"].step_width_range = (0.25, 0.4)
         # scale down the terrains because the robot is small
         # self.scene.terrain.terrain_generator.sub_terrains["boxes"].grid_height_range = (0.025, 0.1)
         # self.scene.terrain.terrain_generator.sub_terrains["boxes"].grid_width = 0.8
@@ -195,6 +203,55 @@ class DeeproboticsLite3RoughEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.rewards.hipy_joint_pos_penalty.params["asset_cfg"].joint_names = self.hipy_joint_names
         self.rewards.knee_joint_pos_penalty.weight = -2
         self.rewards.knee_joint_pos_penalty.params["asset_cfg"].joint_names = self.knee_joint_names
+
+        # stair climbing rewards - disabled for now, enable after debugging
+        self.rewards.stair_climbing_reward = RewTerm(
+            func=mdp.stair_climbing_reward,
+            weight=0.0,
+            params={
+                "command_name": "base_velocity",
+                "asset_cfg": SceneEntityCfg("robot", body_names=self.base_link_name),
+                "std": 0.3,
+            },
+        )
+        self.rewards.step_clearance_reward = RewTerm(
+            func=mdp.step_clearance_reward,
+            weight=0.0,
+            params={
+                "command_name": "base_velocity",
+                "asset_cfg": SceneEntityCfg("robot", body_names=[self.foot_link_name]),
+                "min_clearance": 0.10,
+                "std": 0.05,
+            },
+        )
+        self.rewards.stair_ascent_stability_reward = RewTerm(
+            func=mdp.stair_ascent_stability_reward,
+            weight=0.0,
+            params={
+                "command_name": "base_velocity",
+                "asset_cfg": SceneEntityCfg("robot", body_names=self.base_link_name),
+                "std": 0.1,
+            },
+        )
+        self.rewards.terrain_gradient_tracking_reward = RewTerm(
+            func=mdp.terrain_gradient_tracking_reward,
+            weight=0.0,
+            params={
+                "command_name": "base_velocity",
+                "sensor_cfg": SceneEntityCfg("height_scanner"),
+                "asset_cfg": SceneEntityCfg("robot", body_names=self.base_link_name),
+                "std": 0.15,
+            },
+        )
+        self.rewards.contact_force_variance_reward = RewTerm(
+            func=mdp.contact_force_variance_reward,
+            weight=0.0,
+            params={
+                "sensor_cfg": SceneEntityCfg("contact_forces", body_names=[self.foot_link_name]),
+                "asset_cfg": SceneEntityCfg("robot", body_names=[self.foot_link_name]),
+                "std": 50.0,
+            },
+        )
 
 
         # If the weight of rewards is 0, set rewards to None
