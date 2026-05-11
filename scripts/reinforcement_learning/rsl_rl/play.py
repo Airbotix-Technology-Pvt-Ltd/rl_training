@@ -97,6 +97,23 @@ except Exception:
     except Exception:
         omni_debug_draw = None
 
+VIS_ENABLEd = omni_debug_draw is not None
+draw_interface = omni_debug_draw.acquire_debug_draw_interface() if omni_debug_draw else None
+
+foot_ids = None
+phase_offsets = None
+cycle_time = None
+gait_span = None
+gait_psi = None
+gait_delta = None
+x_offset = None
+stance_span = None
+cmd_threshold = None
+stand_ref_z_offset = None
+cmd_hist = None
+act_hist = None
+stand_ref_body = None
+
 from rsl_rl.runners import OnPolicyRunner
 
 from isaaclab.devices import Se2Keyboard, Se2KeyboardCfg
