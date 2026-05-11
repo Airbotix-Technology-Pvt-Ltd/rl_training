@@ -1097,3 +1097,113 @@ def lin_vel_xy_l2_with_ang_z_command(
     # reward *= torch.sum(torch.square(env.command_manager.get_command(command_name)[:, 2:]), dim=1) > command_threshold
     # reward *= torch.clamp(-env.scene["robot"].data.projected_gravity_b[:, 2], 0, 0.7) / 0.7
     return reward
+
+
+def stair_climbing_reward(
+    env: ManagerBasedRLEnv,
+    command_name: str,
+    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
+    std: float = 0.3,
+) -> torch.Tensor:
+    """Reward vertical velocity tracking for stair climbing.
+
+    This function rewards the robot for moving up/down stairs by tracking vertical velocity.
+    Only active when the robot is commanded to move forward.
+    """
+    asset: RigidObject = env.scene[asset_cfg.name]
+    base_z_vel = asset.data.root_lin_vel_b[:, 2]
+    cmd = env.command_manager.get_command(command_name)
+    cmd_magnitude = torch.norm(cmd[:, :2], dim=1)
+    reward = torch.exp(-torch.square(base_z_vel) / std**2)
+    reward *= cmd_magnitude > 0.1
+    return reward * get_gait_level_tensor(env)
+
+
+def step_clearance_reward(
+    env: ManagerBasedRLEnv,
+    command_name: str,
+    asset_cfg: SceneEntityCfg,
+    min_clearance: float = 0.08,
+    std: float = 0.05,
+) -> torch.Tensor:
+    """Reward foot clearance for clearing steps.
+
+    This function rewards the robot for lifting its feet high enough to clear obstacles/stairs.
+    """
+    asset: RigidObject = env.scene[asset_cfg.name]
+    cmd_magnitude = torch.norm(env.command_manager.get_command(command_name)[:, :2], dim=1)
+    rel_foot_pos_w = asset.data.body_pos_w[:, asset_cfg.body_ids, :] - asset.data.root_pos_w[:, :].unsqueeze(1)
+    foot_pos_b = torch.zeros(env.num_envs, len(asset_cfg.body_ids), 3, device=env.device)
+    for i in range(len(asset_cfg.body_ids)):
+        foot_pos_b[:, i, :] = math_utils.quat_apply_inverse(asset.data.root_quat_w, rel_foot_pos_w[:, i, :])
+    foot_clearance = torch.clamp(foot_pos_b[:, :, 2] - min_clearance, min=0.0)
+    reward = torch.exp(-torch.sum(torch.square(foot_pos_b[:, :, 2] - min_clearance), dim=1) / std**2)
+    reward *= cmd_magnitude > 0.1
+    return reward * get_gait_level_tensor(env)
+
+
+def stair_ascent_stability_reward(
+    env: ManagerBasedRLEnv,
+    command_name: str,
+    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
+    std: float = 0.1,
+) -> torch.Tensor:
+    """Penalize lateral deviation during stair climbing.
+
+    This function penalizes sideways movement during stair ascent to improve stability.
+    """
+    asset: RigidObject = env.scene[asset_cfg.name]
+    base_y_vel = asset.data.root_lin_vel_b[:, 1]
+    cmd = env.command_manager.get_command(command_name)
+    cmd_x = cmd[:, 0]
+    lateral_penalty = torch.square(base_y_vel)
+    reward = torch.exp(-lateral_penalty / std**2)
+    reward *= cmd_x > 0.1
+    return reward * get_gait_level_tensor(env)
+
+
+def terrain_gradient_tracking_reward(
+    env: ManagerBasedRLEnv,
+    sensor_cfg: SceneEntityCfg,
+    command_name: str,
+    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
+    std: float = 0.15,
+) -> torch.Tensor:
+    """Reward tracking terrain slope/gradient for stair climbing.
+
+    This function uses the height scan to estimate the terrain gradient ahead of the robot
+    and rewards the robot for adapting its body pitch accordingly.
+    """
+    asset: RigidObject = env.scene[asset_cfg.name]
+    sensor: RayCaster = env.scene[sensor_cfg.name]
+    cmd_magnitude = torch.norm(env.command_manager.get_command(command_name)[:, :2], dim=1)
+    ray_hits = sensor.data.ray_hits_w[..., 2]
+    if torch.isnan(ray_hits).any() or torch.isinf(ray_hits).any() or ray_hits.numel() == 0:
+        return torch.zeros(env.num_envs, device=env.device)
+    if ray_hits.shape[1] < 2:
+        return torch.zeros(env.num_envs, device=env.device)
+    max_h = torch.max(ray_hits, dim=1)[0]
+    min_h = torch.min(ray_hits, dim=1)[0]
+    terrain_slope = max_h - min_h
+    base_pitch = torch.asin(torch.clamp(asset.data.projected_gravity_b[:, 0], -1.0, 1.0))
+    pitch_error = torch.square(base_pitch + terrain_slope * 0.5)
+    reward = torch.exp(-pitch_error / std**2)
+    reward *= cmd_magnitude > 0.1
+    return reward * get_gait_level_tensor(env)
+
+
+def contact_force_variance_reward(
+    env: ManagerBasedRLEnv,
+    sensor_cfg: SceneEntityCfg,
+    asset_cfg: SceneEntityCfg,
+    std: float = 50.0,
+) -> torch.Tensor:
+    """Reward uniform contact force distribution across feet.
+
+    This helps prevent excessive force on individual feet during stair climbing.
+    """
+    contact_sensor: ContactSensor = env.scene[sensor_cfg.name]
+    net_forces = torch.norm(contact_sensor.data.net_forces_w[:, :, sensor_cfg.body_ids], dim=-1)
+    force_variance = torch.var(net_forces, dim=1)
+    reward = torch.exp(-force_variance / std**2)
+    return reward * get_gait_level_tensor(env)
